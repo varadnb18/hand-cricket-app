@@ -27,7 +27,7 @@ function generateRoomId() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-function createGameState(roomId) {
+function createGameState(roomId, maxOvers = 'Unlimited') {
   return {
     roomId,
     players: [],          // [{ id, name, socketId }]
@@ -48,6 +48,8 @@ function createGameState(roomId) {
     timers: {},           // { socketId: timeoutId }
     disconnected: {},     // { socketId: playerIdx }
     rematchRequests: {},  // { socketId: boolean }
+    maxBalls: maxOvers === 'Unlimited' || !maxOvers ? null : parseInt(maxOvers) * 6,
+    ballsPlayed: [0, 0],
   };
 }
 
@@ -75,11 +77,21 @@ function buildClientState(g) {
     currentBatterIdx: g.currentBatterIdx,
     currentBowlerIdx: g.currentBowlerIdx,
     target: g.target,
+    maxBalls: g.maxBalls,
+    ballsPlayed: g.ballsPlayed,
   };
 }
 
 function getPlayerIdx(g, socketId) {
   return g.players.findIndex((p) => p.socketId === socketId);
+}
+
+function checkTossMoves(g) {
+  const p1Sid = g.players[0].socketId;
+  const p2Sid = g.players[1].socketId;
+  if (g.toss.moves[p1Sid] !== undefined && g.toss.moves[p2Sid] !== undefined) {
+    resolveToss(g);
+  }
 }
 
 function startToss(g) {
@@ -88,6 +100,22 @@ function startToss(g) {
   g.toss.callerIdx = Math.floor(Math.random() * 2);
   broadcastState(g.roomId);
   io.to(g.roomId).emit('tossStart', { callerIdx: g.toss.callerIdx });
+
+  if (g.isSinglePlayer && g.players[g.toss.callerIdx].id === 'AI') {
+    setTimeout(() => {
+      const choices = ['odd', 'even'];
+      const choice = choices[Math.floor(Math.random() * 2)];
+      g.toss.callerChoice = choice;
+      io.to(g.roomId).emit('tossChoiceMade', { callerIdx: g.toss.callerIdx, choice });
+      io.to(g.roomId).emit('tossThrow');
+
+      setTimeout(() => {
+        const aiNum = Math.ceil(Math.random() * 6);
+        g.toss.moves['AI'] = aiNum;
+        checkTossMoves(g);
+      }, 800);
+    }, 1500);
+  }
 }
 
 function resolveToss(g) {
@@ -109,6 +137,27 @@ function resolveToss(g) {
     winnerName: g.players[winnerIdx].name,
     total,
   });
+
+  if (g.isSinglePlayer && g.toss.winnerId === 'AI') {
+    setTimeout(() => {
+      const choices = ['bat', 'bowl'];
+      const choice = choices[Math.floor(Math.random() * 2)];
+      let batterSid;
+      if (choice === 'bat') {
+        batterSid = 'AI';
+      } else {
+        batterSid = g.players.find((p) => p.id !== 'AI')?.socketId;
+      }
+      g.toss.batFirst = batterSid;
+
+      io.to(g.roomId).emit('batBowlDecision', {
+        choice,
+        batterIdx: g.players.findIndex((p) => p.socketId === batterSid),
+      });
+
+      setTimeout(() => startInnings(g, batterSid), 1500);
+    }, 2000);
+  }
 }
 
 function startInnings(g, batterSocketId) {
@@ -178,6 +227,8 @@ function resolveBall(g) {
 
   const inningsScoreIdx = g.innings - 1;
 
+  g.ballsPlayed[inningsScoreIdx]++;
+
   if (!isOut) {
     runsScored = batterNum;
     g.score[inningsScoreIdx] += runsScored;
@@ -191,18 +242,29 @@ function resolveBall(g) {
     score: [...g.score],
     innings: g.innings,
     target: g.target,
+    ballsPlayed: g.ballsPlayed[inningsScoreIdx],
+    maxBalls: g.maxBalls,
   };
 
   io.to(g.roomId).emit('ballResult', ballResult);
 
   g.moves = {};
 
+  const maxBallsReached = g.maxBalls !== null && g.ballsPlayed[inningsScoreIdx] >= g.maxBalls;
+
   // Check innings-over conditions
-  if (isOut) {
-    endInnings(g);
+  if (isOut || maxBallsReached) {
+    setTimeout(() => {
+      if (g.innings === 2 && g.score[1] >= g.target) {
+        // Chasing team won on the last ball / getting out (Wait, if they get out, they don't score. So if score >= target, they already won).
+        endGame(g, g.players[g.currentBatterIdx].id);
+      } else {
+        endInnings(g);
+      }
+    }, 2500);
   } else if (g.innings === 2 && g.score[1] >= g.target) {
     // Chasing team won
-    endGame(g, g.players[g.currentBatterIdx].id);
+    setTimeout(() => endGame(g, g.players[g.currentBatterIdx].id), 2500);
   } else {
     // Continue batting
     broadcastState(g.roomId);
@@ -213,7 +275,7 @@ function resolveBall(g) {
         startMoveTimer(g, bowlerSid);
         io.to(g.roomId).emit('nextBall', { innings: g.innings, score: [...g.score], target: g.target });
       }
-    }, 2000);
+    }, 2500);
   }
 }
 
@@ -234,36 +296,62 @@ function endInnings(g) {
       startInnings(g, newBatterSid);
     }, 3000);
   } else {
-    // Innings 2 over — bowling team wins (chasing team got out before reaching target)
-    const bowlingTeamId = g.players[g.currentBowlerIdx].id;
-    endGame(g, bowlingTeamId);
+    // Innings 2 over
+    if (g.score[1] === g.score[0]) {
+      endGame(g, 'tie');
+    } else {
+      const bowlingTeamId = g.players[g.currentBowlerIdx].id;
+      endGame(g, bowlingTeamId);
+    }
   }
 }
 
 function endGame(g, winnerId) {
   clearAllTimers(g);
   g.phase = 'gameOver';
-  const winner = g.players.find((p) => p.id === winnerId);
+  
+  let winnerName = 'Unknown';
+  if (winnerId === 'tie') {
+    winnerName = 'Tie';
+  } else {
+    const winner = g.players.find((p) => p.id === winnerId);
+    if (winner) winnerName = winner.name;
+  }
+  
   broadcastState(g.roomId);
   io.to(g.roomId).emit('gameOver', {
     winnerId,
-    winnerName: winner ? winner.name : 'Unknown',
+    winnerName,
     score: g.score,
     target: g.target,
+    isTie: winnerId === 'tie'
   });
 }
 
 // ── AI Logic (Single Player) ─────────────────────────────────────────────────
 // AI is represented as a fake "player" with id 'AI' and socketId 'AI'
 
-function aiMove() {
-  return Math.ceil(Math.random() * 6);
+function aiMove(g) {
+  let num = Math.ceil(Math.random() * 6);
+  
+  // Fair AI tweak: reduce the chance of picking the exact same number if it's the 2nd innings
+  // and the human is batting, so it doesn't feel like the AI is predicting their move unfairly.
+  const humanSid = g.players.find((p) => p.id !== 'AI')?.socketId;
+  const humanMove = g.moves[humanSid];
+  
+  if (humanMove !== undefined && g.innings === 2 && g.players[g.currentBatterIdx].socketId !== 'AI') {
+    if (num === humanMove && Math.random() < 0.3) {
+      num = Math.ceil(Math.random() * 6); // Reroll 30% of the time it guesses right
+    }
+  }
+  
+  return num;
 }
 
 function handleAiMove(g) {
   if (g.phase !== 'batting') return;
   setTimeout(() => {
-    const aiNum = aiMove();
+    const aiNum = aiMove(g);
     g.moves['AI'] = aiNum;
     io.to(g.roomId).emit('opponentMove', { number: aiNum, isAI: true });
 
@@ -280,9 +368,9 @@ io.on('connection', (socket) => {
   console.log('Connected:', socket.id);
 
   // ── CREATE ROOM ────────────────────────────────────────────────────────────
-  socket.on('createRoom', ({ playerName }) => {
+  socket.on('createRoom', ({ playerName, overs }) => {
     const roomId = generateRoomId();
-    const g = createGameState(roomId);
+    const g = createGameState(roomId, overs);
     g.players.push({ id: socket.id, name: playerName || 'Player 1', socketId: socket.id });
     rooms[roomId] = g;
     socket.join(roomId);
@@ -345,9 +433,9 @@ io.on('connection', (socket) => {
   });
 
   // ── SINGLE PLAYER ─────────────────────────────────────────────────────────
-  socket.on('startSinglePlayer', ({ playerName }) => {
+  socket.on('startSinglePlayer', ({ playerName, overs }) => {
     const roomId = generateRoomId();
-    const g = createGameState(roomId);
+    const g = createGameState(roomId, overs);
     g.players.push({ id: socket.id, name: playerName || 'You', socketId: socket.id });
     g.players.push({ id: 'AI', name: 'AI Bot', socketId: 'AI' });
     g.isSinglePlayer = true;
@@ -402,13 +490,7 @@ io.on('connection', (socket) => {
     checkTossMoves(g);
   });
 
-  function checkTossMoves(g) {
-    const p1Sid = g.players[0].socketId;
-    const p2Sid = g.players[1].socketId;
-    if (g.toss.moves[p1Sid] !== undefined && g.toss.moves[p2Sid] !== undefined) {
-      resolveToss(g);
-    }
-  }
+  // checkTossMoves is defined globally
 
   // ── BAT/BOWL CHOICE (after toss win) ─────────────────────────────────────
   socket.on('batBowlChoice', ({ choice }) => {
@@ -469,6 +551,7 @@ io.on('connection', (socket) => {
       // Reset game state
       g.innings = 1;
       g.score = [0, 0];
+      g.ballsPlayed = [0, 0];
       g.target = null;
       g.currentBatterIdx = null;
       g.currentBowlerIdx = null;

@@ -38,10 +38,11 @@ export default function SinglePlayerSetup({ onStart, onBack }) {
 
 function NameForm({ onStart }) {
   const [name, setName] = useState('');
+  const [overs, setOvers] = useState('Unlimited');
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (name.trim()) onStart(name.trim());
+    if (name.trim()) onStart(name.trim(), overs);
   }
 
   return (
@@ -56,8 +57,22 @@ function NameForm({ onStart }) {
         onChange={(e) => setName(e.target.value)}
         placeholder="e.g. Rohit"
         autoFocus
-        className="w-full bg-black/50 border-2 border-white/10 rounded-md px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all mb-5 font-bold"
+        className="w-full bg-black/50 border-2 border-white/10 rounded-md px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all mb-4 font-bold"
       />
+
+      <label className="block text-xs font-black text-gray-300 uppercase tracking-widest mb-2 mt-4">
+        Overs
+      </label>
+      <select
+        value={overs}
+        onChange={(e) => setOvers(e.target.value)}
+        className="w-full bg-black/50 border-2 border-white/10 rounded-md px-4 py-3 text-white focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all mb-6 font-bold cursor-pointer"
+      >
+        <option value="2">2 Overs</option>
+        <option value="5">5 Overs</option>
+        <option value="10">10 Overs</option>
+        <option value="Unlimited">Unlimited</option>
+      </select>
       <button
         type="submit"
         disabled={!name.trim()}

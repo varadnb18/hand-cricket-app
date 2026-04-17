@@ -46,6 +46,8 @@ export default function App() {
     currentBatterIdx: 0,
     currentBowlerIdx: 1,
     phase: 'waiting',
+    maxBalls: null,
+    ballsPlayed: [0, 0],
   });
 
   // Ball result for reveal animation
@@ -114,6 +116,8 @@ export default function App() {
         currentBatterIdx: state.currentBatterIdx ?? 0,
         currentBowlerIdx: state.currentBowlerIdx ?? 1,
         phase: state.phase,
+        maxBalls: state.maxBalls ?? null,
+        ballsPlayed: state.ballsPlayed ?? [0, 0],
       });
       if (state.players?.length) setPlayers(state.players);
     });
@@ -165,7 +169,11 @@ export default function App() {
     socket.on('ballResult', (result) => {
       ballCountRef.current += 1;
       setLastBall({ ...result, ballCount: ballCountRef.current });
-      setGameState((g) => ({ ...g, score: result.score, innings: result.innings, target: result.target }));
+      setGameState((g) => {
+        const newBallsPlayed = [...g.ballsPlayed];
+        newBallsPlayed[result.innings - 1] = result.ballsPlayed;
+        return { ...g, score: result.score, innings: result.innings, target: result.target, ballsPlayed: newBallsPlayed, maxBalls: result.maxBalls };
+      });
     });
 
     socket.on('nextBall', ({ innings, score, target }) => {
@@ -193,7 +201,7 @@ export default function App() {
       setGameOverResult(null);
       setInningsBreakData(null);
       ballCountRef.current = 0;
-      setGameState({ innings: 1, score: [0, 0], target: null, currentBatterIdx: 0, currentBowlerIdx: 1, phase: 'toss' });
+      setGameState({ innings: 1, score: [0, 0], target: null, currentBatterIdx: 0, currentBowlerIdx: 1, phase: 'toss', maxBalls: null, ballsPlayed: [0, 0] });
       // Screen switches automatically when 'tossStart' is received immediately after
     });
 
@@ -228,13 +236,13 @@ export default function App() {
   }, []);
 
   // ── Action Handlers ─────────────────────────────────────────────────────────
-  function handleSinglePlayerStart(playerName) {
+  function handleSinglePlayerStart(playerName, overs) {
     setIsSinglePlayer(true);
-    socket.emit('startSinglePlayer', { playerName });
+    socket.emit('startSinglePlayer', { playerName, overs });
   }
 
-  function handleCreateRoom(playerName) {
-    socket.emit('createRoom', { playerName });
+  function handleCreateRoom(playerName, overs) {
+    socket.emit('createRoom', { playerName, overs });
   }
 
   function handleJoinRoom(playerName, roomCode) {
@@ -274,7 +282,7 @@ export default function App() {
     setTossCallerChoice(null);
     setTossResult(null);
     setBatBowlWinnerIdx(null);
-    setGameState({ innings: 1, score: [0, 0], target: null, currentBatterIdx: 0, currentBowlerIdx: 1, phase: 'waiting' });
+    setGameState({ innings: 1, score: [0, 0], target: null, currentBatterIdx: 0, currentBowlerIdx: 1, phase: 'waiting', maxBalls: null, ballsPlayed: [0, 0] });
     setLastBall(null);
     setInningsBreakData(null);
     setGameOverResult(null);

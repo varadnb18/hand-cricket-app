@@ -4,13 +4,13 @@ export default function Lobby({ onCreateRoom, onJoinRoom, onBack }) {
   const [tab, setTab] = useState('create'); // 'create' | 'join'
   const [playerName, setPlayerName] = useState('');
   const [roomCode, setRoomCode] = useState('');
-  const [error, setError] = useState('');
+  const [overs, setOvers] = useState('Unlimited');
 
   function handleCreate(e) {
     e.preventDefault();
     if (!playerName.trim()) { setError('Enter your name first'); return; }
     setError('');
-    onCreateRoom(playerName.trim());
+    onCreateRoom(playerName.trim(), overs);
   }
 
   function handleJoin(e) {
@@ -68,6 +68,24 @@ export default function Lobby({ onCreateRoom, onJoinRoom, onBack }) {
             placeholder="e.g. Virat"
             className="w-full bg-black/50 border-2 border-white/10 rounded-md px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all mb-5 font-bold"
           />
+
+          {tab === 'create' && (
+            <>
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 mt-2">
+                Overs
+              </label>
+              <select
+                value={overs}
+                onChange={(e) => setOvers(e.target.value)}
+                className="w-full bg-black/50 border-2 border-white/10 rounded-md px-4 py-3 text-white focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all mb-5 font-bold cursor-pointer"
+              >
+                <option value="2">2 Overs</option>
+                <option value="5">5 Overs</option>
+                <option value="10">10 Overs</option>
+                <option value="Unlimited">Unlimited</option>
+              </select>
+            </>
+          )}
 
           {tab === 'join' && (
             <>

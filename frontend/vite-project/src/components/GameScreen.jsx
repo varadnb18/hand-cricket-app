@@ -127,7 +127,12 @@ export default function GameScreen({
 
         {/* Status Line */}
         <div className="relative z-10 mt-2 pt-2 border-t border-white/10 flex justify-between text-[11px] text-gray-300 font-bold uppercase">
-          <span>Overs: <span className="text-white">Unlimited</span></span>
+          <span>
+            Overs: <span className="text-white">
+              {Math.floor((gameState.ballsPlayed?.[innings - 1] ?? 0) / 6)}.{((gameState.ballsPlayed?.[innings - 1] ?? 0) % 6)}
+              {gameState.maxBalls ? ` / ${Math.floor(gameState.maxBalls / 6)}` : ''}
+            </span>
+          </span>
           {innings === 2 && target && (
             <span className="text-yellow-400">Need {Math.max(0, target - (score[1] ?? 0))} to win</span>
           )}

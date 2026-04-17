@@ -1,8 +1,8 @@
 export default function GameOver({ result, players, myIdx, onHome, onRequestRematch, rematchRequests }) {
-  const { winnerId, winnerName, score, target } = result;
+  const { winnerId, winnerName, score, target, isTie } = result;
   const myPlayer = players[myIdx];
   const iWon = myPlayer && myPlayer.id === winnerId;
-  const isDraw = !winnerId;
+  const isDraw = isTie || winnerId === 'tie' || !winnerId;
 
   const iRequested = rematchRequests?.[myIdx];
   const opponentIdx = 1 - myIdx;
@@ -56,7 +56,11 @@ export default function GameOver({ result, players, myIdx, onHome, onRequestRema
                   {requested ? (
                     <span className="badge bg-blue-900/50 text-blue-400 border border-blue-500/30">WANTS REMATCH</span>
                   ) : (
-                    p?.id === winnerId && <span className="badge bg-yellow-900/50 text-yellow-400 border border-yellow-500/30">WINNER</span>
+                    p?.id === winnerId ? (
+                      <span className="badge bg-yellow-900/50 text-yellow-400 border border-yellow-500/30">WINNER</span>
+                    ) : isDraw ? (
+                      <span className="badge bg-gray-600/50 text-gray-300 border border-gray-500/30">DRAW</span>
+                    ) : null
                   )}
                 </div>
               );
