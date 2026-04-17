@@ -76,127 +76,137 @@ export default function GameScreen({
   }
 
   const timerPct = (timeLeft / TIMER_SECONDS) * 100;
-  const timerColor = timeLeft <= 5 ? 'bg-red-500' : timeLeft <= 10 ? 'bg-amber-400' : 'bg-emerald-400';
+  const timerColor = timeLeft <= 5 ? 'bg-red-500' : timeLeft <= 10 ? 'bg-amber-400' : 'bg-green-500';
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start px-4 py-6 animate-fade-in">
-      <div className="w-full max-w-lg space-y-4">
-
-        {/* ── Top Bar: Innings + Target ─────────────────────────────── */}
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen flex flex-col items-center justify-between px-2 py-4 animate-fade-in relative">
+      {/* ── TV Scoreboard (Top) ────────────────────────────────────── */}
+      <div className="w-full max-w-lg mb-4 glass-card p-3 flex flex-col shadow-2xl relative overflow-hidden">
+        {/* Subtle grass texture behind scoreboard */}
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')]" />
+        
+        <div className="relative z-10 flex items-center justify-between border-b-2 border-white/10 pb-2 mb-2">
           <div className="flex items-center gap-2">
-            <span className={`badge ${innings === 1 ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' : 'bg-violet-900/50 text-violet-400 border border-violet-500/30'}`}>
-              {innings === 1 ? '1st Innings' : '2nd Innings'}
+            <span className="badge bg-blue-600 text-white shadow-md">
+              {innings === 1 ? '1ST INNINGS' : '2ND INNINGS'}
             </span>
             {isSinglePlayer && (
-              <span className="badge bg-blue-900/50 text-blue-400 border border-blue-500/30">vs AI</span>
+              <span className="badge bg-slate-700 text-white shadow-md">vs AI</span>
             )}
           </div>
           {innings === 2 && target && (
-            <div className="text-right">
-              <p className="text-xs text-gray-400">Target</p>
-              <p className="text-xl font-black text-amber-400">{target}</p>
+            <div className="text-right flex items-baseline gap-2">
+              <span className="text-xs text-yellow-400 font-bold uppercase tracking-wider">Target</span>
+              <span className="text-xl font-black text-white">{target}</span>
             </div>
           )}
         </div>
 
-        {/* ── Scoreboard ────────────────────────────────────────────── */}
-        <div className="glass-card">
-          <div className="grid grid-cols-2 gap-4 text-center">
-            {players.map((p, i) => {
-              const isBatter = currentBatterIdx === i;
-              const isBowler = currentBowlerIdx === i;
-              // In innings 1: batter = score[0], bowler = 0 shown (they bowl)
-              // In innings 2: batter = score[1], bowler = score[0] (what they set)
-              const displayScore = innings === 1
-                ? (isBatter ? score[0] : '-')
-                : (isBatter ? score[1] : score[0]);
-              return (
-                <div key={i} className={`rounded-xl p-3 transition-all duration-300 ${i === myIdx ? 'bg-emerald-900/20 border border-emerald-500/20' : 'bg-white/5 border border-white/5'}`}>
-                  <p className="text-xs text-gray-400 font-medium truncate mb-1">{p?.name ?? '?'}</p>
-                  <p className={`text-3xl font-black ${i === myIdx ? 'text-emerald-400' : 'text-white'}`}>
-                    {displayScore ?? 0}
-                  </p>
-                  <div className="flex justify-center gap-1 mt-1">
-                    {isBatter && <span className="badge bg-emerald-900/50 text-emerald-400 border border-emerald-500/20 text-[10px]">🏏 BAT</span>}
-                    {isBowler && <span className="badge bg-amber-900/50 text-amber-400 border border-amber-500/20 text-[10px]">🎯 BOWL</span>}
-                  </div>
+        <div className="relative z-10 grid grid-cols-2 gap-4 text-center">
+          {players.map((p, i) => {
+            const isBatter = currentBatterIdx === i;
+            const isBowler = currentBowlerIdx === i;
+            const displayScore = innings === 1
+              ? (isBatter ? score[0] : '-')
+              : (isBatter ? score[1] : score[0]);
+            
+            return (
+              <div key={i} className={`rounded-md p-2 flex flex-col justify-center border-l-4 ${i === myIdx ? 'bg-blue-900/40 border-blue-400' : 'bg-slate-800/40 border-slate-500'}`}>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] text-gray-300 font-bold uppercase truncate max-w-[80px]">{p?.name ?? '?'}</span>
+                  {isBatter && <span className="text-[10px] bg-yellow-500 text-black px-1 rounded-sm font-black">BAT</span>}
+                  {isBowler && <span className="text-[10px] bg-red-500 text-white px-1 rounded-sm font-black">BOWL</span>}
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Innings Score summary */}
-          <div className="mt-3 pt-3 border-t border-white/5 flex justify-between text-xs text-gray-500">
-            <span>Innings 1: <span className="text-white font-semibold">{score[0] ?? 0}</span></span>
-            {innings === 2 && <span>Innings 2: <span className="text-violet-400 font-semibold">{score[1] ?? 0}</span></span>}
-            {innings === 2 && target && (
-              <span>Need: <span className="text-amber-400 font-semibold">{Math.max(0, target - (score[1] ?? 0))}</span></span>
-            )}
-          </div>
+                <div className="text-3xl font-black font-mono text-white tracking-tighter">
+                  {displayScore ?? 0}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* ── Ball Result Reveal ────────────────────────────────────── */}
+        {/* Status Line */}
+        <div className="relative z-10 mt-2 pt-2 border-t border-white/10 flex justify-between text-[11px] text-gray-300 font-bold uppercase">
+          <span>Overs: <span className="text-white">Unlimited</span></span>
+          {innings === 2 && target && (
+            <span className="text-yellow-400">Need {Math.max(0, target - (score[1] ?? 0))} to win</span>
+          )}
+        </div>
+      </div>
+
+      {/* ── Pitch Area (Center) ────────────────────────────────────── */}
+      <div className="flex-1 w-full max-w-sm relative flex flex-col items-center justify-between py-8">
+        {/* The Pitch Background */}
+        <div className="absolute inset-y-0 w-3/4 bg-[#e8cd96] opacity-30 rounded-t-3xl rounded-b-3xl" style={{ boxShadow: 'inset 0 0 40px rgba(0,0,0,0.5)' }}></div>
+        {/* Stumps Top */}
+        <div className="flex gap-1 z-10 opacity-70">
+          <div className="w-1.5 h-8 bg-white rounded-t-sm shadow-sm"></div>
+          <div className="w-1.5 h-8 bg-white rounded-t-sm shadow-sm"></div>
+          <div className="w-1.5 h-8 bg-white rounded-t-sm shadow-sm"></div>
+        </div>
+
+        {/* Ball Reveal Animation */}
         {showReveal && revealData && (
-          <div className={`glass-card text-center border animate-slide-up ${revealData.isOut ? 'border-red-500/40 bg-red-900/10' : 'border-emerald-500/30 bg-emerald-900/10'} ${isShaking ? 'shake' : ''}`}>
-            <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">Ball Result</p>
-            <div className="flex items-center justify-center gap-6 mb-3">
-              <div className="text-center">
-                <p className="text-xs text-gray-500 mb-1">{players[currentBatterIdx]?.name}</p>
-                <div className="num-btn selected reveal-anim mx-auto text-2xl w-16 h-16">
-                  {revealData.batterNum}
+          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center ${isShaking ? 'shake' : ''}`}>
+             <div className="flex items-center gap-4">
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-bold text-white mb-1 shadow-black">{players[currentBatterIdx]?.name}</span>
+                  <div className="num-btn w-16 h-16 text-3xl shadow-2xl"><span>{revealData.batterNum}</span></div>
                 </div>
-              </div>
-              <div className="text-2xl font-black text-gray-500">vs</div>
-              <div className="text-center">
-                <p className="text-xs text-gray-500 mb-1">{players[currentBowlerIdx]?.name}</p>
-                <div className="num-btn out reveal-anim mx-auto text-2xl w-16 h-16">
-                  {revealData.bowlerNum}
+                <span className="text-2xl font-black text-white italic drop-shadow-lg">VS</span>
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-bold text-white mb-1 shadow-black">{players[currentBowlerIdx]?.name}</span>
+                  <div className="num-btn w-16 h-16 text-3xl shadow-2xl animate-ball-bowl"><span>{revealData.bowlerNum}</span></div>
                 </div>
-              </div>
-            </div>
-            {revealData.isOut ? (
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-3xl">💥</span>
-                <p className="text-2xl font-black text-red-400">OUT!</p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-1">
-                <p className="text-2xl font-black text-emerald-400">+{revealData.runsScored} runs</p>
-              </div>
-            )}
+             </div>
+
+             <div className="mt-8">
+                {revealData.isOut ? (
+                  <div className="text-center bg-red-600 border-4 border-white px-6 py-2 rounded-lg shadow-2xl transform -rotate-6 scale-110">
+                    <p className="text-4xl font-black text-white tracking-widest uppercase">WICKET!</p>
+                  </div>
+                ) : (
+                  <div className="text-center bg-green-600 border-4 border-white px-6 py-2 rounded-lg shadow-2xl transform rotate-3 scale-110">
+                    <p className="text-4xl font-black text-white tracking-widest uppercase">+{revealData.runsScored} RUNS</p>
+                  </div>
+                )}
+             </div>
           </div>
         )}
 
-        {/* ── Your Role Label ───────────────────────────────────────── */}
         {!showReveal && (
-          <div className="text-center">
-            <p className="text-sm text-gray-400">
-              You are{' '}
-              <span className={`font-bold ${iAmBatting ? 'text-emerald-400' : 'text-amber-400'}`}>
-                {iAmBatting ? '🏏 Batting' : '🎯 Bowling'}
-              </span>
-            </p>
+          <div className="z-10 text-center bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
+             <p className="text-sm font-bold text-white uppercase tracking-widest">
+               {iAmBatting ? '🏏 You are Batting' : '🎯 You are Bowling'}
+             </p>
           </div>
         )}
 
-        {/* ── Number Input ──────────────────────────────────────────── */}
+        {/* Stumps Bottom */}
+        <div className="flex gap-1 z-10 opacity-70">
+          <div className="w-1.5 h-10 bg-white rounded-t-sm shadow-sm"></div>
+          <div className="w-1.5 h-10 bg-white rounded-t-sm shadow-sm"></div>
+          <div className="w-1.5 h-10 bg-white rounded-t-sm shadow-sm"></div>
+        </div>
+      </div>
+
+      {/* ── Controls (Bottom) ──────────────────────────────────────── */}
+      <div className="w-full max-w-lg mt-4 bg-[#0a1622]/90 backdrop-blur-md p-4 rounded-t-3xl border-t-2 border-blue-500/50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
         {!showReveal && (
-          <div className="glass-card">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-semibold text-gray-300">
-                {locked ? '✅ Move locked in!' : 'Pick your number'}
+          <>
+            <div className="flex items-center justify-between mb-3 px-2">
+              <p className="text-xs font-black uppercase text-gray-300 tracking-wider">
+                {locked ? '✅ BALL LOCKED' : 'SELECT YOUR DELIVERY'}
               </p>
-              {/* Timer bar */}
               <div className="flex items-center gap-2">
-                <span className={`text-sm font-bold tabular-nums ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-gray-300'}`}>
-                  {timeLeft}s
+                <span className={`text-xs font-black tabular-nums ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-green-400'}`}>
+                  00:{timeLeft.toString().padStart(2, '0')}
                 </span>
               </div>
             </div>
 
             {/* Timer bar */}
-            <div className="w-full h-1.5 bg-white/10 rounded-full mb-4 overflow-hidden">
+            <div className="w-full h-1.5 bg-slate-800 rounded-full mb-5 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-1000 ${timerColor}`}
                 style={{ width: `${timerPct}%` }}
@@ -211,21 +221,23 @@ export default function GameScreen({
                   onClick={() => handlePick(n)}
                   className={`num-btn ${selected === n ? 'selected' : ''}`}
                 >
-                  {n}
+                  <span>{n}</span>
                 </button>
               ))}
             </div>
 
             {locked && (
-              <p className="text-center text-xs text-gray-500 mt-4 animate-pulse">
-                Waiting for {oppPlayer?.name ?? 'opponent'}…
+              <p className="text-center text-xs text-yellow-400 mt-4 animate-pulse font-bold tracking-widest uppercase">
+                WAITING FOR OPPONENT...
               </p>
             )}
-          </div>
+          </>
         )}
-
-        {/* ── Innings Change Banner ─────────────────────────────────── */}
-        {/* shown from parent via prop if needed */}
+        {showReveal && (
+           <p className="text-center text-xs text-gray-400 font-bold uppercase tracking-widest h-20 flex items-center justify-center">
+             Umpire Decision...
+           </p>
+        )}
       </div>
     </div>
   );

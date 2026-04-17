@@ -47,6 +47,7 @@ function createGameState(roomId) {
     moves: {},            // { socketId: number } current ball moves
     timers: {},           // { socketId: timeoutId }
     disconnected: {},     // { socketId: playerIdx }
+    rematchRequests: {},  // { socketId: boolean }
   };
 }
 
@@ -450,6 +451,41 @@ io.on('connection', (socket) => {
       if (aiIsPlaying && g.moves['AI'] === undefined) {
         handleAiMove(g);
       }
+    }
+  });
+
+  // ── REMATCH ───────────────────────────────────────────────────────────────
+  socket.on('requestRematch', () => {
+    const roomId = socket.data.roomId;
+    const g = rooms[roomId];
+    if (!g || g.phase !== 'gameOver') return;
+
+    g.rematchRequests[socket.id] = true;
+
+    // Check if everyone requested
+    const allRequested = g.isSinglePlayer || g.players.every(p => g.rematchRequests[p.socketId]);
+
+    if (allRequested) {
+      // Reset game state
+      g.innings = 1;
+      g.score = [0, 0];
+      g.target = null;
+      g.currentBatterIdx = null;
+      g.currentBowlerIdx = null;
+      g.moves = {};
+      g.timers = {};
+      g.rematchRequests = {};
+      g.toss = { callerIdx: null, callerChoice: null, moves: {}, winnerId: null, batFirst: null };
+      
+      // Tell everyone game is restarting
+      io.to(roomId).emit('rematchAccepted');
+      
+      // Start toss again
+      setTimeout(() => startToss(g), 500);
+    } else {
+      // Tell room someone requested
+      const pIdx = getPlayerIdx(g, socket.id);
+      io.to(roomId).emit('rematchRequested', { playerIdx: pIdx });
     }
   });
 

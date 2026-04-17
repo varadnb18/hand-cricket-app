@@ -2,28 +2,30 @@ import { useState } from 'react';
 
 export default function SinglePlayerSetup({ onStart, onBack }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 animate-fade-in">
-      <button onClick={onBack} className="self-start mb-8 flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm">
-        ← Back
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 animate-fade-in relative overflow-hidden">
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/grass.png')] opacity-20 pointer-events-none mix-blend-overlay"></div>
+
+      <button onClick={onBack} className="self-start mb-8 flex items-center gap-2 text-gray-300 hover:text-white transition-colors text-sm font-bold uppercase tracking-widest relative z-10">
+        ← LEAVE PAVILION
       </button>
 
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🤖</div>
-          <h1 className="text-3xl font-black text-white">vs AI Bot</h1>
-          <p className="text-gray-400 text-sm mt-1">Quick match against our cricket bot</p>
+          <div className="text-6xl mb-3 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">🤖</div>
+          <h1 className="text-4xl font-black text-white uppercase tracking-tighter drop-shadow-lg">Vs Computer</h1>
+          <p className="text-yellow-400 font-bold text-sm mt-1 uppercase tracking-widest">Challenge the AI Bot</p>
         </div>
 
-        <div className="glass-card mb-6 border border-blue-500/20">
-          <div className="space-y-3 text-sm text-gray-300">
-            <div className="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-2">
-              <span>⚡</span><span>AI responds instantly</span>
+        <div className="glass-card mb-6 border-t-4 border-t-yellow-400 bg-black/60">
+          <div className="space-y-4 text-sm text-gray-300 font-bold uppercase tracking-wide">
+            <div className="flex items-center gap-4 bg-black/40 rounded-md px-4 py-3 border border-white/5">
+              <span className="text-xl">⚡</span><span>Instant Deliveries</span>
             </div>
-            <div className="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-2">
-              <span>🎲</span><span>Random strategy — truly unpredictable</span>
+            <div className="flex items-center gap-4 bg-black/40 rounded-md px-4 py-3 border border-white/5">
+              <span className="text-xl">🎲</span><span>Unpredictable Strategy</span>
             </div>
-            <div className="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-2">
-              <span>🏆</span><span>Full innings match with toss</span>
+            <div className="flex items-center gap-4 bg-black/40 rounded-md px-4 py-3 border border-white/5">
+              <span className="text-xl">🏆</span><span>Full Match Experience</span>
             </div>
           </div>
         </div>
@@ -43,9 +45,9 @@ function NameForm({ onStart }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card">
-      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">
-        Your Name
+    <form onSubmit={handleSubmit} className="glass-card bg-blue-900/40">
+      <label className="block text-xs font-black text-gray-300 uppercase tracking-widest mb-2">
+        Player Name
       </label>
       <input
         type="text"
@@ -54,14 +56,15 @@ function NameForm({ onStart }) {
         onChange={(e) => setName(e.target.value)}
         placeholder="e.g. Rohit"
         autoFocus
-        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors mb-4"
+        className="w-full bg-black/50 border-2 border-white/10 rounded-md px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all mb-5 font-bold"
       />
       <button
         type="submit"
         disabled={!name.trim()}
-        className="w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r from-blue-600 to-cyan-500 shadow-lg shadow-blue-500/30 hover:scale-[1.02] active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full py-4 rounded-md font-black text-white uppercase tracking-widest transition-all duration-200 hover:scale-[1.02] active:scale-95 active:translate-y-1 disabled:opacity-50 disabled:active:translate-y-0 disabled:hover:scale-100
+          bg-gradient-to-b from-blue-500 to-blue-700 shadow-[0_4px_0_#1e3a8a] active:shadow-none"
       >
-        Start Match
+        START MATCH
       </button>
     </form>
   );

@@ -64,6 +64,9 @@ export default function App() {
   // Error
   const [serverError, setServerError] = useState('');
 
+  // Rematch state
+  const [rematchRequests, setRematchRequests] = useState({});
+
   // ── Socket Setup ────────────────────────────────────────────────────────────
   useEffect(() => {
     socket.connect();
@@ -176,7 +179,22 @@ export default function App() {
     // Game over
     socket.on('gameOver', (result) => {
       setGameOverResult(result);
+      setRematchRequests({});
       setScreen(SCREEN.GAME_OVER);
+    });
+
+    // Rematch
+    socket.on('rematchRequested', ({ playerIdx }) => {
+      setRematchRequests((prev) => ({ ...prev, [playerIdx]: true }));
+    });
+
+    socket.on('rematchAccepted', () => {
+      setRematchRequests({});
+      setGameOverResult(null);
+      setInningsBreakData(null);
+      ballCountRef.current = 0;
+      setGameState({ innings: 1, score: [0, 0], target: null, currentBatterIdx: 0, currentBowlerIdx: 1, phase: 'toss' });
+      // Screen switches automatically when 'tossStart' is received immediately after
     });
 
     // Disconnect notice
@@ -241,6 +259,10 @@ export default function App() {
     socket.emit('playerMove', { number });
   }
 
+  function handleRequestRematch() {
+    socket.emit('requestRematch');
+  }
+
   function resetAll() {
     setScreen(SCREEN.HOME);
     setPlayers([]);
@@ -256,6 +278,7 @@ export default function App() {
     setLastBall(null);
     setInningsBreakData(null);
     setGameOverResult(null);
+    setRematchRequests({});
     setDisconnectMsg('');
     setServerError('');
     ballCountRef.current = 0;
@@ -361,8 +384,9 @@ export default function App() {
           result={gameOverResult}
           players={players}
           myIdx={myIdx}
-          onPlayAgain={resetAll}
           onHome={resetAll}
+          onRequestRematch={handleRequestRematch}
+          rematchRequests={rematchRequests}
         />
       )}
     </div>

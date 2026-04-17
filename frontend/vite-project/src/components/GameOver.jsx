@@ -1,8 +1,12 @@
-export default function GameOver({ result, players, myIdx, onPlayAgain, onHome }) {
+export default function GameOver({ result, players, myIdx, onHome, onRequestRematch, rematchRequests }) {
   const { winnerId, winnerName, score, target } = result;
   const myPlayer = players[myIdx];
   const iWon = myPlayer && myPlayer.id === winnerId;
   const isDraw = !winnerId;
+
+  const iRequested = rematchRequests?.[myIdx];
+  const opponentIdx = 1 - myIdx;
+  const opponentRequested = rematchRequests?.[opponentIdx];
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 animate-fade-in">
@@ -43,29 +47,43 @@ export default function GameOver({ result, players, myIdx, onPlayAgain, onHome }
         <div className="glass-card mb-6">
           <p className="text-xs text-gray-400 uppercase tracking-widest mb-3">Players</p>
           <div className="space-y-2">
-            {players.map((p, i) => (
-              <div key={i} className={`flex items-center gap-3 rounded-lg px-4 py-3 ${p?.id === winnerId ? 'bg-yellow-900/20 border border-yellow-500/20' : 'bg-white/5'}`}>
-                <span className="text-lg">{p?.id === winnerId ? '🏆' : '🏏'}</span>
-                <span className="font-medium text-sm flex-1 text-left">{p?.name}</span>
-                {p?.id === winnerId && <span className="badge bg-yellow-900/50 text-yellow-400 border border-yellow-500/30">WINNER</span>}
-              </div>
-            ))}
+            {players.map((p, i) => {
+              const requested = rematchRequests?.[i];
+              return (
+                <div key={i} className={`flex items-center gap-3 rounded-lg px-4 py-3 ${p?.id === winnerId ? 'bg-yellow-900/20 border border-yellow-500/20' : 'bg-white/5'}`}>
+                  <span className="text-lg">{p?.id === winnerId ? '🏆' : '🏏'}</span>
+                  <span className="font-medium text-sm flex-1 text-left">{p?.name}</span>
+                  {requested ? (
+                    <span className="badge bg-blue-900/50 text-blue-400 border border-blue-500/30">WANTS REMATCH</span>
+                  ) : (
+                    p?.id === winnerId && <span className="badge bg-yellow-900/50 text-yellow-400 border border-yellow-500/30">WINNER</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Actions */}
         <div className="flex flex-col gap-3">
-          <button
-            onClick={onPlayAgain}
-            className="w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-600 to-green-500 shadow-lg shadow-emerald-500/30 hover:scale-[1.02] active:scale-95 transition-all duration-200"
-          >
-            🔄 Play Again
-          </button>
+          {iRequested ? (
+            <div className="w-full py-3 rounded-xl font-bold text-blue-400 bg-blue-900/20 border border-blue-500/30 flex items-center justify-center gap-2">
+              <div className="w-4 h-4 rounded-full border-2 border-blue-400/30 border-t-blue-400 animate-spin" />
+              Waiting for opponent...
+            </div>
+          ) : (
+            <button
+              onClick={onRequestRematch}
+              className="w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-600 to-green-500 shadow-lg shadow-emerald-500/30 hover:scale-[1.02] active:scale-95 transition-all duration-200"
+            >
+              🔄 Rematch
+            </button>
+          )}
           <button
             onClick={onHome}
             className="w-full py-3 rounded-xl font-semibold text-gray-400 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all duration-200"
           >
-            🏠 Home
+            🏠 Leave Room (Home)
           </button>
         </div>
       </div>

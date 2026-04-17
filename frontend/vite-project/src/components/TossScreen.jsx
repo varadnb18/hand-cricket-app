@@ -33,37 +33,44 @@ export default function TossScreen({
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 animate-fade-in">
-      <div className="w-full max-w-lg text-center">
-        <div className="text-5xl mb-4">🪙</div>
-        <h2 className="text-3xl font-black text-white mb-1">Toss Time!</h2>
-        <p className="text-gray-400 text-sm mb-8">
-          {players[callerIdx]?.name ?? 'Player'} is calling the toss
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 animate-fade-in relative overflow-hidden">
+      {/* Stadium grass background overlay */}
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/grass.png')] opacity-20 pointer-events-none mix-blend-overlay"></div>
+
+      <div className="w-full max-w-lg text-center relative z-10">
+        
+        {/* Pitch Graphic Top */}
+        <div className="mb-6 mx-auto w-32 h-8 bg-[#e8cd96] opacity-30 rounded-t-full shadow-inner"></div>
+
+        <div className="text-6xl mb-2 animate-bounce-slow">🪙</div>
+        <h2 className="text-4xl font-black text-white mb-1 uppercase tracking-widest drop-shadow-lg">Toss Time!</h2>
+        <p className="text-green-300 text-sm mb-8 font-bold uppercase tracking-wider">
+          <span className="text-white">{players[callerIdx]?.name ?? 'Player'}</span> is calling the toss
         </p>
 
         {/* Phase: Caller picks odd/even */}
         {phase === 'choosing' && (
-          <div className="glass-card animate-slide-up">
+          <div className="glass-card animate-slide-up bg-black/60 border-yellow-500">
             {isCaller ? (
               <>
-                <p className="text-white font-semibold mb-6">You call — Odd or Even?</p>
+                <p className="text-white font-bold mb-6 text-lg tracking-wide">WHAT'S YOUR CALL?</p>
                 <div className="flex gap-4 justify-center">
                   {ODD_EVEN.map((c) => (
                     <button
                       key={c}
                       onClick={() => onTossChoice(c)}
-                      className="px-8 py-4 rounded-xl font-bold text-lg capitalize transition-all duration-200 hover:scale-105 active:scale-95
-                        bg-gradient-to-br from-violet-600 to-purple-700 text-white shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50"
+                      className="px-8 py-4 rounded-md font-black text-xl uppercase tracking-widest transition-all duration-200 hover:scale-105 active:scale-95
+                        bg-gradient-to-b from-blue-500 to-blue-800 text-white shadow-[0_4px_0_#1e3a8a] active:shadow-none active:translate-y-1"
                     >
-                      {c === 'odd' ? '1️⃣ Odd' : '2️⃣ Even'}
+                      {c === 'odd' ? '1️⃣ ODD' : '2️⃣ EVEN'}
                     </button>
                   ))}
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 rounded-full border-4 border-violet-400/30 border-t-violet-400 animate-spin" />
-                <p className="text-gray-400">Waiting for {players[callerIdx]?.name} to call…</p>
+              <div className="flex flex-col items-center gap-4 py-4">
+                <div className="w-16 h-16 rounded-full border-4 border-yellow-400/30 border-t-yellow-400 animate-spin" />
+                <p className="text-gray-300 font-bold uppercase tracking-wider">Waiting for {players[callerIdx]?.name} to call…</p>
               </div>
             )}
           </div>
@@ -71,24 +78,26 @@ export default function TossScreen({
 
         {/* Phase: Both throw a number */}
         {phase === 'throwing' && (
-          <div className="glass-card animate-slide-up">
-            <p className="text-white font-semibold mb-2">
-              {players[callerIdx]?.name} called <span className="text-violet-400 capitalize font-bold">{callerChoice}</span>
-            </p>
-            <p className="text-gray-400 text-sm mb-6">Now both pick a number 1–6!</p>
+          <div className="glass-card animate-slide-up bg-black/60 border-blue-500">
+            <div className="bg-blue-900/50 rounded-lg p-3 mb-6 border border-blue-500/30">
+              <p className="text-white font-bold text-sm">
+                {players[callerIdx]?.name} called <span className="text-yellow-400 uppercase font-black text-lg ml-1">{callerChoice}</span>
+              </p>
+            </div>
+            <p className="text-gray-300 text-xs font-black uppercase tracking-widest mb-4">SELECT YOUR NUMBER</p>
 
             {moved ? (
-              <div className="flex flex-col items-center gap-3">
-                <div className="num-btn selected text-3xl">{selectedNum}</div>
-                <p className="text-emerald-400 text-sm font-medium animate-pulse">
-                  ✓ Locked in! Waiting for opponent…
+              <div className="flex flex-col items-center gap-4 py-2">
+                <div className="num-btn selected w-20 h-20 text-4xl"><span>{selectedNum}</span></div>
+                <p className="text-green-400 text-sm font-black uppercase tracking-widest animate-pulse">
+                  ✓ LOCKED IN!
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-6 gap-2 justify-items-center">
                 {[1, 2, 3, 4, 5, 6].map((n) => (
                   <button key={n} className="num-btn" onClick={() => pickTossNum(n)}>
-                    {n}
+                    <span>{n}</span>
                   </button>
                 ))}
               </div>
@@ -98,54 +107,54 @@ export default function TossScreen({
 
         {/* Phase: Toss result */}
         {phase === 'result' && tossResult && (
-          <div className="glass-card animate-slide-up">
-            <div className="text-5xl mb-3">{tossResult.winnerId === players[myIdx]?.id ? '🎉' : '😔'}</div>
-            <p className="text-2xl font-black text-white mb-1">
-              {tossResult.winnerName} won the toss!
+          <div className="glass-card animate-slide-up bg-black/60 border-yellow-500">
+            <div className="text-6xl mb-4">{tossResult.winnerId === players[myIdx]?.id ? '🎉' : '🏏'}</div>
+            <p className="text-3xl font-black text-yellow-400 mb-1 uppercase tracking-wider drop-shadow-md">
+              {tossResult.winnerName} WINS THE TOSS!
             </p>
-            <p className="text-gray-400 text-sm">
-              Total: <span className="text-white font-bold">{tossResult.total}</span>
-              {' '}({tossResult.total % 2 === 0 ? 'Even' : 'Odd'})
-            </p>
-            <div className="mt-4 flex justify-center gap-3">
-              <span className="score-chip bg-emerald-900/40 text-emerald-400 border border-emerald-500/30">
-                🎯 Toss done
-              </span>
+            <div className="mt-4 bg-white/10 rounded-lg p-3 inline-block">
+              <p className="text-gray-200 text-sm font-bold uppercase">
+                Total: <span className="text-white font-black text-xl ml-1">{tossResult.total}</span>
+                <span className="text-blue-400 ml-2">({tossResult.total % 2 === 0 ? 'EVEN' : 'ODD'})</span>
+              </p>
             </div>
           </div>
         )}
 
         {/* Phase: Winner chooses bat/bowl */}
         {phase === 'batbowl' && (
-          <div className="glass-card animate-slide-up">
+          <div className="glass-card animate-slide-up bg-black/60 border-green-500">
             {myIdx === batBowlWinnerIdx ? (
               <>
-                <p className="text-white font-semibold mb-6">You won! Choose to…</p>
+                <p className="text-yellow-400 font-black text-xl uppercase tracking-widest mb-6">YOU WON! WHAT WILL YOU DO?</p>
                 <div className="flex gap-4 justify-center">
                   <button
                     onClick={() => pickBatBowl('bat')}
-                    className="flex-1 py-5 rounded-xl font-bold text-lg transition-all duration-200 hover:scale-105 active:scale-95
-                      bg-gradient-to-br from-emerald-600 to-green-500 text-white shadow-lg shadow-emerald-500/30"
+                    className="flex-1 py-5 rounded-md font-black text-2xl tracking-widest uppercase transition-all duration-200 hover:scale-105 active:scale-95
+                      bg-gradient-to-b from-green-500 to-green-700 text-white shadow-[0_4px_0_#14532d] active:shadow-none active:translate-y-1"
                   >
-                    🏏 Bat
+                    🏏 BAT
                   </button>
                   <button
                     onClick={() => pickBatBowl('bowl')}
-                    className="flex-1 py-5 rounded-xl font-bold text-lg transition-all duration-200 hover:scale-105 active:scale-95
-                      bg-gradient-to-br from-amber-600 to-orange-500 text-white shadow-lg shadow-amber-500/30"
+                    className="flex-1 py-5 rounded-md font-black text-2xl tracking-widest uppercase transition-all duration-200 hover:scale-105 active:scale-95
+                      bg-gradient-to-b from-red-500 to-red-700 text-white shadow-[0_4px_0_#7f1d1d] active:shadow-none active:translate-y-1"
                   >
-                    🎯 Bowl
+                    🎯 BOWL
                   </button>
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 rounded-full border-4 border-emerald-400/30 border-t-emerald-400 animate-spin" />
-                <p className="text-gray-400">Waiting for {players[batBowlWinnerIdx]?.name} to decide…</p>
+              <div className="flex flex-col items-center gap-4 py-4">
+                <div className="w-16 h-16 rounded-full border-4 border-green-400/30 border-t-green-400 animate-spin" />
+                <p className="text-gray-300 font-bold uppercase tracking-wider">Waiting for {players[batBowlWinnerIdx]?.name} to decide…</p>
               </div>
             )}
           </div>
         )}
+
+        {/* Pitch Graphic Bottom */}
+        <div className="mt-6 mx-auto w-40 h-10 bg-[#e8cd96] opacity-30 rounded-b-full shadow-inner"></div>
       </div>
     </div>
   );
