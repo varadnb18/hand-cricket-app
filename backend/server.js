@@ -332,16 +332,53 @@ function endGame(g, winnerId) {
 // AI is represented as a fake "player" with id 'AI' and socketId 'AI'
 
 function aiMove(g) {
-  let num = Math.ceil(Math.random() * 6);
+  const isBatting = g.players[g.currentBatterIdx].socketId === 'AI';
+  const inningsScoreIdx = g.innings - 1;
+  const maxBalls = g.maxBalls;
+  const ballsPlayed = g.ballsPlayed[inningsScoreIdx];
+  const target = g.target;
+  const score = g.score[inningsScoreIdx];
+
+  let pool = [1, 2, 3, 4, 5, 6];
+
+  // Smart logic applies mostly in the 2nd innings when chasing a target with limited balls
+  if (g.innings === 2 && maxBalls !== null && target !== null) {
+    const runsNeeded = target - score;
+    const ballsLeft = maxBalls - ballsPlayed;
+    
+    if (ballsLeft > 0) {
+      // Calculate the absolute minimum number the batter MUST hit to mathematically stay in the game.
+      // Example: 12 runs needed in 2 balls -> minRequired = 12 - (1 * 6) = 6.
+      let minRequired = runsNeeded - ((ballsLeft - 1) * 6);
+      
+      if (minRequired > 6) {
+        // Impossible to win, just play randomly
+        minRequired = 1;
+      } else if (minRequired < 1) {
+        minRequired = 1;
+      }
+      
+      // If the batter is forced to hit big numbers to win, limit the pool.
+      // If AI is batting: it MUST hit these big numbers to survive.
+      // If AI is bowling: it knows the human MUST hit these big numbers, so it bowls them to get the human out!
+      pool = [];
+      for (let i = minRequired; i <= 6; i++) {
+        pool.push(i);
+      }
+    }
+  }
+
+  // Pick a random number from the smart pool
+  let num = pool[Math.floor(Math.random() * pool.length)];
   
-  // Fair AI tweak: reduce the chance of picking the exact same number if it's the 2nd innings
-  // and the human is batting, so it doesn't feel like the AI is predicting their move unfairly.
+  // Fair AI tweak: if it's a completely random guess (pool is large), reduce the chance of 
+  // perfectly predicting the human's move instantly, so the human doesn't feel the game is rigged.
   const humanSid = g.players.find((p) => p.id !== 'AI')?.socketId;
   const humanMove = g.moves[humanSid];
   
-  if (humanMove !== undefined && g.innings === 2 && g.players[g.currentBatterIdx].socketId !== 'AI') {
+  if (humanMove !== undefined && !isBatting && pool.length > 2) {
     if (num === humanMove && Math.random() < 0.3) {
-      num = Math.ceil(Math.random() * 6); // Reroll 30% of the time it guesses right
+      num = pool[Math.floor(Math.random() * pool.length)]; // Reroll
     }
   }
   

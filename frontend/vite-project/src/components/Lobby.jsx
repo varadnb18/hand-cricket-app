@@ -79,6 +79,7 @@ export default function Lobby({ onCreateRoom, onJoinRoom, onBack }) {
                 onChange={(e) => setOvers(e.target.value)}
                 className="w-full bg-black/50 border-2 border-white/10 rounded-md px-4 py-3 text-white focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all mb-5 font-bold cursor-pointer"
               >
+                <option value="1">1 Over</option>
                 <option value="2">2 Overs</option>
                 <option value="5">5 Overs</option>
                 <option value="10">10 Overs</option>
